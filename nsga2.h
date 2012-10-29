@@ -196,6 +196,7 @@ void Nsga2::fast_nom_dominated_sort() {
 		//associação de crownding distance igual a 0
 		//sempre realizada antes do cálculo de crowndig
 		m_population[i]->crownding = 0.0;
+		m_population[i]->fitness = 0;
 
 		for (int j = 0; j < i; ++j) {
 			if (i == j) continue;
