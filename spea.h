@@ -565,6 +565,10 @@ void Spea2::recombination () {
 
 		delete ind;
 	}
+
+	for (int i=(all_pop - ARCSIZE); i< all_pop; ++i) {
+		population[i]->fitness = 0.0;
+	}
 }
 
 int Spea2::binaryTournament  () {

@@ -569,9 +569,9 @@ void Spea2::recombination () {
 
 int Spea2::binaryTournament  () {
 
-	int ind1 = rand () % (all_pop - ARCSIZE) + ARCSIZE;
-	int ind2 = rand () % (all_pop - ARCSIZE) + ARCSIZE;
-	while (ind1 == ind2) ind2 = rand () % (all_pop - ARCSIZE) + ARCSIZE;
+	int ind1 = rand () % ARCSIZE + (all_pop - ARCSIZE);
+	int ind2 = rand () % ARCSIZE + (all_pop - ARCSIZE);
+	while (ind1 == ind2) ind2 = rand () % ARCSIZE + (all_pop - ARCSIZE);
 
 	return (population[ind1]->fitness < population[ind2]->fitness ? ind1 : ind2);
 

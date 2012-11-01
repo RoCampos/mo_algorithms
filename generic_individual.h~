@@ -109,9 +109,7 @@ GenericIndividual::individual_t ()
 bool GenericIndividual::assign (individual_t * ind)
 {	
 	//verifica se o objeto já está no arquivo
-	if (ind->obj[0] == obj[0] &&
-		ind->obj[1] == obj[1] &&
-		ind->fitness == fitness) return false;
+	if (ind->obj[0] == obj[0] && ind->obj[1] == obj[1]) return false;
 
 
 	fitness = ind->fitness;
