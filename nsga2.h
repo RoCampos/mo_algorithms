@@ -5,8 +5,6 @@
 #include "generic_individual.h"
 #include "multiobjective.h"
 
-
-
 #include <limits>
 
 /**
@@ -57,13 +55,18 @@ bool compareByCrownding (GenericIndividual * ind1, GenericIndividual * ind2){
 class Nsga2 {
 
 public:
-	Nsga2 (int popsize = 10, int max_gen = 100);
+	Nsga2 (int popsize = 10, int max_gen = 100,
+			double p_cross = 0.5, double p_mut = 0.5);
+
 	~Nsga2 ();
 
 	void run ();
 	void recombination ();
 	void printPop ();
 	void printPopAsPisa ();
+
+	void printArc (std::fstream &file);
+
 
 private:
 	/**
@@ -137,14 +140,17 @@ private:
 	int m_max_gen;
 	int gen;
 	int m_curr_popsize;
+	double m_prob_cross;
+	double m_prob_mut;
 	GenericIndividual **m_population;
 
 	std::vector<front> fronts;
 
 };
 
-Nsga2::Nsga2(int popsize, int max_gen)
-	: m_popsize(popsize), m_max_gen(max_gen)
+Nsga2::Nsga2(int popsize, int max_gen, double p_cross, double p_mut)
+	: m_popsize(popsize), m_max_gen(max_gen),
+	  m_prob_cross(p_cross), m_prob_mut (p_mut)
 {
 	gen = 1;
 	m_curr_popsize = m_popsize;
@@ -164,31 +170,26 @@ Nsga2::~Nsga2() {
 void Nsga2::run() {
 
 #ifdef DEBUG
-	printf ("Function: %s\n",__PRETTY_FUNCTION__);
+	printf ("\nFunction: %s\n",__PRETTY_FUNCTION__);
 #endif
-
-	cout << "Generation: "<< gen << endl;
 
 	initialization();
 	recombination();
 
-	while (++gen <= m_max_gen) {
+	do {
 
 		fast_nom_dominated_sort();
 		nextPopulation();
 		recombination();
-		cout << "Generation: "<< gen << endl;
 
-	}
-
-	printPopAsPisa();
+	} while (++gen <= m_max_gen);
 
 }
 
 void Nsga2::fast_nom_dominated_sort() {
 
 #ifdef DEBUG
-	printf ("Function: %s\n",__PRETTY_FUNCTION__);
+	printf ("\nFunction: %s\n",__PRETTY_FUNCTION__);
 #endif
 
 	for (int i = 0; i < (2 * m_popsize); ++i) {
@@ -196,7 +197,7 @@ void Nsga2::fast_nom_dominated_sort() {
 		//associação de crownding distance igual a 0
 		//sempre realizada antes do cálculo de crowndig
 		m_population[i]->crownding = 0.0;
-		m_population[i]->fitness = 0;
+		m_population[i]->fitness = 0.0;
 
 		for (int j = 0; j < i; ++j) {
 			if (i == j) continue;
@@ -218,14 +219,20 @@ void Nsga2::fast_nom_dominated_sort() {
 
 	std::sort (m_population,m_population + (2 * m_popsize),compareByFitness);
 
+#ifdef DEBUG
+	printPop ();
+#endif
+
 	create_fronts();
+
+
 
 }
 
 void Nsga2::create_fronts() {
 
 #ifdef DEBUG
-	printf ("Function: %s\n",__PRETTY_FUNCTION__);
+	printf ("\nFunction: %s\n",__PRETTY_FUNCTION__);
 #endif
 
 	fronts.clear();
@@ -265,7 +272,7 @@ void Nsga2::create_fronts() {
 
 void Nsga2::crownding_distance(int begin, int end) {
 #ifdef DEBUG
-	printf ("Function: %s\n",__PRETTY_FUNCTION__);
+	printf ("\nFunction: %s\n",__PRETTY_FUNCTION__);
 #endif
 
 
@@ -278,7 +285,8 @@ void Nsga2::crownding_distance(int begin, int end) {
 		double max = m_population[ end ]->obj[ objective ];
 		double min = m_population[ begin ]->obj[ objective ];
 
-		m_population[ begin ]->crownding = numeric_limits<double>::max ();
+		//m_population[ begin ]->crownding = numeric_limits<double>::max ();
+		m_population[ begin ]->crownding = 100000;
 		m_population[ end ]->crownding = m_population[ begin ]->crownding;
 
 		double denom = max - min;
@@ -292,7 +300,7 @@ void Nsga2::crownding_distance(int begin, int end) {
 
 	cout << "Crownding Cal\n";
 	for (int i=begin; i <= end; ++i) {
-		cout << "Index " << m_population[i]->index;
+		cout << "Idx: " << m_population[i]->index;
 		cout << " Crownding: " << m_population[i]->crownding << endl;
 	}
 
@@ -303,7 +311,7 @@ void Nsga2::crownding_distance(int begin, int end) {
 //usa o crownding distance se necessário
 void Nsga2::nextPopulation() {
 #ifdef DEBUG
-	printf ("Function: %s\n",__PRETTY_FUNCTION__);
+	printf ("\nFunction: %s\n",__PRETTY_FUNCTION__);
 #endif
 
 	int size = 0;
@@ -316,7 +324,8 @@ void Nsga2::nextPopulation() {
 		if (size + fronts[f].counter > m_popsize) {
 			needCrownding = true;
 			break;
-		} else if (size + fronts[f].counter == m_popsize){
+		}
+		else if (size + fronts[f].counter == m_popsize){
 			break;
 		}
 
@@ -339,13 +348,17 @@ void Nsga2::nextPopulation() {
 
 	}
 
+#ifdef DEBUG
+	printPop();
+#endif
+
 }
 
 
 void Nsga2::initialization() {
 
 #ifdef DEBUG
-	printf ("Function: %s\n",__PRETTY_FUNCTION__);
+	printf ("\nFunction: %s\n",__PRETTY_FUNCTION__);
 #endif
 
 	for (int var = 0; var < m_popsize; ++var) {
@@ -363,7 +376,7 @@ void Nsga2::initialization() {
 void Nsga2::recombination() {
 
 #ifdef DEBUG
-	printf ("Function: %s\n",__PRETTY_FUNCTION__);
+	printf ("\nFunction: %s\n",__PRETTY_FUNCTION__);
 #endif
 
 
@@ -372,18 +385,23 @@ void Nsga2::recombination() {
 		GenericIndividual * ind = new GenericIndividual(false);
 
 		int _p1 = binary_tournament();
-
 		int _p2 = binary_tournament();
 		while (_p1 == _p2) _p2 = binary_tournament();
 
 		GenericIndividual * p1 = m_population[_p1];
 		GenericIndividual * p2 = m_population[_p2];
 
-		/**
-		//DEFINIDA AQUI SUA FORMA DE RECOMBINAR OS INDIVÍDUOS
-		//rca::crossover3 (p1->mpp_ind, p2->mpp_ind, &(ind->mpp_ind));
-		// 
-		**/
+		int prob_cross = rand () % 10 + 1;
+
+
+		if ( ((double)prob_cross/10) <= m_prob_cross ) {
+		//do something if prob_cross is less or equal than m_prob_cross
+			
+
+		} else {
+		//do something else
+			
+		}
 
 		ind->index = i + m_popsize;
 		ind->obj[0] = ind->mpp_ind.getObjective(0);
@@ -413,23 +431,36 @@ void Nsga2::printPop() {
 				m_population[i]->index,
 				m_population[i]->fitness,
 				m_population[i]->crownding);
-		double obj1 = population[i]->obj[0];
-		double obj2 = population[i]->obj[1];
+		double obj1 = m_population[i]->mpp_ind.getObjective(0);
+		double obj2 = m_population[i]->mpp_ind.getObjective(1);
 		printf ("%f %f\n",obj1, obj2);
 	}
 
 }
 
 void Nsga2::printPopAsPisa () {
-	printf("Current Population\n");
+
 	for (int i=0; i < (m_popsize); i++) {
-		printf ("Index: %d  fitness: %f \t",
-				m_population[i]->index,
-				m_population[i]->fitness);
-		double obj1 = population[i]->obj[0];
-		double obj2 = population[i]->obj[1];
+		double obj1 = m_population[i]->mpp_ind.getObjective(0);
+		double obj2 = m_population[i]->mpp_ind.getObjective(1);
 		printf ("%f %f\n",obj1, obj2);
 	}
+	printf ("\n");
+}
+
+//print only non-dominated individuals do a file
+void Nsga2::printArc(std::fstream& file) {
+
+	for (int i=0; i < (m_popsize); i++) {
+
+		if ((int)m_population[i]->fitness < 1) {
+			double obj1 = m_population[i]->mpp_ind.getObjective(0);
+			double obj2 = m_population[i]->mpp_ind.getObjective(1);
+			file << obj1 << " " << obj2 << endl;
+		}
+	}
+	file << endl;
+
 }
 
 #endif /* NSGA2_H_ */
