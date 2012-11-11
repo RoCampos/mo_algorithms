@@ -1,0 +1,17 @@
+This project tries to make a generic independent-problem multiobjetive
+optimization framework. 
+
+The purpose of the project is provide the implementation of the main 
+multiobjective algorithms in a generic way. In this case, the final
+user of the framework is able to configurate his specific optimization
+problem without thinking about the optimizer.
+
+The project started with NSGA2(Non-Sorted Genetic Algorithm 2) and 
+SPEA2 (Strenght Pareto Evolutionary Algorithm 2) and a generic
+representatino of a individual and a problem_info class that it represents
+informations about the problem and the amount of individuals.
+
+Other algorithms are being implemented...
+
+This codes are being used by myself in the Laboratorio de Algoritmos
+Experimentais (LAE) at Federal University of Rio Grande do Norte - Natal - Brazil.
